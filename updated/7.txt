@@ -1,0 +1,98 @@
+-- Assuming you are in the correct schema, dropping the database isn't necessary for Oracle
+-- If you want to drop schema objects, you can drop the tables, but we don't use DROP DATABASE like in MySQL.
+
+-- Create table Fine_0
+CREATE TABLE Fine_0 (
+    Roll NUMBER,
+    dates DATE,
+    Amt NUMBER(10, 2)
+);
+
+-- Create table Borrower_0
+CREATE TABLE Borrower_0 (
+    Roll NUMBER,
+    name VARCHAR2(50),
+    DateOfIssue DATE,
+    NameOfBook VARCHAR2(50),
+    Status CHAR(1)
+);
+
+-- Insert data into Borrower_0 table
+INSERT INTO Borrower_0 VALUES (1, 'Alice Smith', TO_DATE('2024-08-01', 'YYYY-MM-DD'), 'Introduction to Algorithms', 'N');
+INSERT INTO Borrower_0 VALUES (2, 'John Doe', TO_DATE('2024-09-01', 'YYYY-MM-DD'), 'Database Management', 'N');
+INSERT INTO Borrower_0 VALUES (3, 'Emily Johnson', TO_DATE('2024-08-10', 'YYYY-MM-DD'), 'Networking Basics', 'N');
+INSERT INTO Borrower_0 VALUES (4, 'Michael Brown', TO_DATE('2024-07-15', 'YYYY-MM-DD'), 'Operating Systems Concepts', 'N');
+
+-- Create the procedure to calculate the fine
+CREATE OR REPLACE PROCEDURE CalculateFine(
+    studentRoll_no IN NUMBER,
+    bookName IN VARCHAR2
+) IS
+    issueDate DATE;
+    daysOverdue NUMBER := 0;
+    fineAmount NUMBER(10, 2) := 0;
+
+BEGIN
+    -- Retrieve DateofIssue from Borrower_0 table
+    BEGIN
+        SELECT DateofIssue
+        INTO issueDate
+        FROM Borrower_0
+        WHERE Roll = studentRoll_no AND NameofBook = bookName;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            DBMS_OUTPUT.PUT_LINE('No record found for Roll ' || studentRoll_no || ' and Book ' || bookName);
+            RETURN;
+    END;
+
+    -- Calculate the number of overdue days
+    daysOverdue := (SYSDATE - issueDate);
+
+    -- Calculate fine based on the number of overdue days
+    IF daysOverdue > 15 THEN
+        IF daysOverdue > 30 THEN
+            fineAmount := (daysOverdue - 30) * 50 + (30 - 15) * 5;
+        ELSE
+            fineAmount := (daysOverdue - 15) * 5;
+        END IF;
+    END IF;
+
+    -- Update status to 'R' (Returned) and insert fine if applicable
+    IF fineAmount > 0 THEN
+        UPDATE Borrower_0
+        SET Status = 'R'
+        WHERE Roll = studentRoll_no AND NameofBook = bookName;
+
+        INSERT INTO Fine_0 (Roll, dates, Amt)
+        VALUES (studentRoll_no, SYSDATE, fineAmount);
+    END IF;
+
+    -- Show result for reference
+    DBMS_OUTPUT.PUT_LINE('Fine Amount: ' || fineAmount || ', Days Overdue: ' || daysOverdue);
+
+END CalculateFine;
+/
+
+-- Example call to the procedure:
+BEGIN
+    CalculateFine(1, 'Introduction to Algorithms');
+END;
+/
+
+BEGIN
+    CalculateFine(2, 'Database Management');
+END;
+/
+
+BEGIN
+    CalculateFine(3, 'Networking Basics');
+END;
+/
+
+BEGIN
+    CalculateFine(4, 'Operating Systems Concepts');
+END;
+/
+
+select * from Fine_0;
+select * from borrower_0;

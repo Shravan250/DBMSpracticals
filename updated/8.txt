@@ -1,0 +1,60 @@
+-- Create the Stud_Marks table
+drop table Stud_Marks_08;
+drop table Result_08;
+
+
+CREATE TABLE Stud_Marks_08 (
+    RollNo NUMBER,
+    Name VARCHAR2(50),
+    Total_Marks NUMBER
+);
+
+
+-- Create the Result table
+CREATE TABLE Result_08 (
+    RollNo NUMBER,
+    Name VARCHAR2(50),
+    Class VARCHAR2(30)
+);
+
+-- Create the stored procedure proc_Grade for categorization of students based on marks
+CREATE OR REPLACE PROCEDURE proc_Grade (
+    roll_no IN NUMBER, 
+    student_name IN VARCHAR2, 
+    marks IN NUMBER
+) AS
+    student_class VARCHAR2(30);
+BEGIN
+    -- Check the category based on marks and assign to 'student_class'
+    IF (marks <= 1500 AND marks >= 990) THEN
+        student_class := 'DISTINCTION';
+    ELSIF (marks <= 989 AND marks >= 900) THEN
+        student_class := 'FIRST CLASS';
+    ELSIF (marks <= 899 AND marks >= 825) THEN
+        student_class := 'HIGHER SECOND CLASS';
+    ELSE
+        student_class := 'FAIL';
+    END IF;
+
+    -- Insert the result into the Result table
+    INSERT INTO Result_08 (RollNo, Name, Class)
+    VALUES (roll_no, student_name, student_class);
+    
+    
+    -- Optionally, display the classification for debugging purposes
+    DBMS_OUTPUT.PUT_LINE('RollNo: ' || roll_no || ', Name: ' || student_name || ', Class: ' || student_class);
+END proc_Grade;
+/
+
+-- Example of calling the procedure to insert a student's result
+BEGIN
+    -- Test the procedure with sample data
+    proc_Grade(1, 'Alice Smith', 1020);
+    proc_Grade(2, 'John Doe', 950);
+    proc_Grade(3, 'Emily Johnson', 875);
+    proc_Grade(4, 'Michael Brown', 700);
+END;
+/
+
+-- Query to verify the inserted results in the Result table
+SELECT * FROM Result_08;
